@@ -1,0 +1,7 @@
+project_id = "bekcuzjhtwbyzjwejnoy"
+
+[functions.process-portfolio]
+verify_jwt = false
+
+[functions.update-prices]
+verify_jwt = false
