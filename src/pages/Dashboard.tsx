@@ -1,123 +1,144 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 
-type PortfolioRow = {
-  id: number;
-  symbol: string;
-  quantity: number;
-  buyPrice: number;
-  currentPrice: number;
-  value: number;
-  profitLoss: number;
-  profitLossPerc: string;
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableRow,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+
+// 🔹 HARD-CODED DEMO DATA – this will always show
+const demoSummary = {
+  totalInvestment: 50000,
+  totalValue: 58000,
+  profitLoss: 8000,
+  profitLossPercent: 16,
 };
 
-const formatCurrency = (value: number) => {
-  if (!value && value !== 0) return "₹0.00";
-  return value.toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
+const demoHoldings = [
+  {
+    symbol: "TCS",
+    quantity: 10,
+    buyPrice: 3500,
+    currentPrice: 3800,
+  },
+  {
+    symbol: "INFY",
+    quantity: 5,
+    buyPrice: 1400,
+    currentPrice: 1500,
+  },
+];
+
+// helper to compute row values
+function getRowValues(h: (typeof demoHoldings)[number]) {
+  const value = h.currentPrice * h.quantity;
+  const invested = h.buyPrice * h.quantity;
+  const pl = value - invested;
+  const plPercent = invested === 0 ? 0 : (pl / invested) * 100;
+  return { value, pl, plPercent };
+}
 
 export default function Dashboard() {
-  const [rows, setRows] = useState<PortfolioRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      const { data, error } = await supabase.from("portfolio").select("*");
-
-      if (error) {
-        console.error("Error fetching portfolio:", error);
-      } else {
-        setRows(data as PortfolioRow[]);
-      }
-
-      setLoading(false);
-    };
-
-    fetchPortfolio();
-  }, []);
-
-  // calculate totals
-  const totalValue = rows.reduce((acc, row) => acc + row.value, 0);
-  const totalCost = rows.reduce((acc, row) => acc + row.buyPrice * row.quantity, 0);
-  const totalProfitLoss = totalValue - totalCost;
-  const totalProfitLossPerc = (totalProfitLoss / totalCost) * 100;
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 animate-fade-in">
-        <h2 className="text-3xl font-bold mb-6">Portfolio Dashboard</h2>
+    <div className="p-6 space-y-6">
+      {/* Top bar */}
+      <div className="flex items-center gap-4">
+        <Link to="/">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="text-2xl font-semibold">Portfolio Dashboard</h1>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6 shadow-card">
-          <p className="text-sm text-muted-foreground mb-2">Total Value</p>
-          <p className="text-3xl font-bold">{formatCurrency(totalValue)}</p>
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Total Value</span>
+              <TrendingUp className="h-5 w-5" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            ₹{demoSummary.totalValue.toLocaleString("en-IN")}
+          </CardContent>
         </Card>
 
-        <Card className="p-6 shadow-card">
-          <p className="text-sm text-muted-foreground mb-2">Total Investment</p>
-          <p className="text-3xl font-bold">{formatCurrency(totalCost)}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Investment</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            ₹{demoSummary.totalInvestment.toLocaleString("en-IN")}
+          </CardContent>
         </Card>
 
-        <Card
-          className={`p-6 shadow-card ${
-            totalProfitLoss >= 0 ? "bg-green-100" : "bg-red-100"
-          }`}
-        >
-          <p className="text-sm text-muted-foreground mb-2">Total Profit / Loss</p>
-          <p className="text-3xl font-bold">
-            {formatCurrency(totalProfitLoss)} ({totalProfitLossPerc.toFixed(2)}%)
-          </p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Total Profit / Loss</span>
+              <TrendingDown className="h-5 w-5" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            ₹{demoSummary.profitLoss.toLocaleString("en-IN")} (
+            {demoSummary.profitLossPercent.toFixed(2)}%)
+          </CardContent>
         </Card>
       </div>
 
-      <Card className="p-6 shadow-card">
-        <h3 className="text-xl font-semibold mb-4">Holdings</h3>
+      {/* Refresh button (just UI now) */}
+      <button className="flex items-center gap-2 border px-3 py-1 rounded-md text-sm">
+        <RefreshCw className="h-4 w-4" />
+        Refresh
+      </button>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">Symbol</th>
-                <th className="py-2">Qty</th>
-                <th className="py-2">Buy Price</th>
-                <th className="py-2">Current</th>
-                <th className="py-2">Value</th>
-                <th className="py-2">P/L</th>
-                <th className="py-2">P/L %</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b hover:bg-muted/30">
-                  <td className="py-2 font-medium">{row.symbol}</td>
-                  <td className="py-2">{row.quantity}</td>
-                  <td className="py-2">₹{row.buyPrice}</td>
-                  <td className="py-2">₹{row.currentPrice}</td>
-                  <td className="py-2">₹{row.value}</td>
-                  <td
-                    className={`py-2 ${
-                      row.profitLoss >= 0 ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    ₹{row.profitLoss}
-                  </td>
-                  <td>{row.profitLossPerc}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      {/* Holdings table */}
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Holdings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Symbol</TableHead>
+                <TableHead>Qty</TableHead>
+                <TableHead>Buy Price</TableHead>
+                <TableHead>Current</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>P/L</TableHead>
+                <TableHead>P/L %</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {demoHoldings.map((h) => {
+                const { value, pl, plPercent } = getRowValues(h);
+                return (
+                  <TableRow key={h.symbol}>
+                    <TableCell>{h.symbol}</TableCell>
+                    <TableCell>{h.quantity}</TableCell>
+                    <TableCell>₹{h.buyPrice}</TableCell>
+                    <TableCell>₹{h.currentPrice}</TableCell>
+                    <TableCell>₹{value}</TableCell>
+                    <TableCell>₹{pl}</TableCell>
+                    <TableCell>{plPercent.toFixed(2)}%</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
     </div>
   );
