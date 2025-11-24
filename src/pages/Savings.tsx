@@ -62,4 +62,37 @@ export default function Savings() {
 
         <Card className="p-6 shadow-card">
           <p className="text-sm text-muted-foreground mb-2">Progress</p>
-          <p className
+          <p className="text-3xl font-bold">{progressPercent}%</p>
+        </Card>
+      </div>
+
+      <Card className="p-6 shadow-card">
+        <h3 className="text-xl font-semibold mb-4">Savings Categories</h3>
+
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">Category</th>
+                <th className="py-2">Saved</th>
+                <th className="py-2">Goal</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b hover:bg-muted/30">
+                  <td className="py-2 font-medium">{row.category}</td>
+                  <td className="py-2">{formatCurrency(row.amount)}</td>
+                  <td className="py-2">{formatCurrency(row.goal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
+  );
+}
